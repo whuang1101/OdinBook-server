@@ -24,7 +24,7 @@ const User = require("./models/user");
 //enables cookies for 24 hours
 app.use(cookieSession({
   name: "session",
-  keys: ["cats"],
+  keys: [process.env.KEY],
   maxAge: 24 * 60 * 60 * 1000,
 }));
 
