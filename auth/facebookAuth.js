@@ -7,10 +7,12 @@ passport.use(new FacebookStrategy({
   clientSecret: process.env.FACEBOOK_APP_SECRET,
   callbackURL: `${process.env.SELF}/auth/facebook/callback`,
   enableProof: true,
-  profileFields: ["id", "displayName", "email"],
+  profileFields: ["id", "displayName", "email","photos"],
   scope: ["email"],
 }, async (accessToken, refreshToken, profile, done) => {
   try {
+    console.log(profile.photos)
+
     let user = await User.findOne({ facebookId: profile.id });
 
     if (!user) {
@@ -18,6 +20,7 @@ passport.use(new FacebookStrategy({
         facebookId: profile.id,
         name: profile.displayName,
         email: profile.email,
+        image_url: profile.photos[0].value
       });
       await user.save();
     }
