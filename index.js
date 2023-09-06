@@ -10,6 +10,7 @@ const cors = require("cors")
 
 //defining routers
 const authRouter = require("./routes/authRouter");
+const postRouter = require("./routes/postRouter");
 app.use(express.json());
 
 //connect mongoose
@@ -34,13 +35,13 @@ app.use(passport.session());
 
 //allows for connecting with cross origin
 app.use(cors({
-    origin:process.env.ORIGIN,
+    origin:"http://localhost:5173",
     methods: "GET, POST, PUT, DELETE",
     credentials: true,
 }))
 
 app.use("/auth",authRouter)
-
+app.use("/posts",postRouter)
 app.listen(port, "0.0.0.0", () => {
     console.log(`Server listening on ${port}`);
 })

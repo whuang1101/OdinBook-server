@@ -11,8 +11,6 @@ passport.use(new FacebookStrategy({
   scope: ["email"],
 }, async (accessToken, refreshToken, profile, done) => {
   try {
-    console.log(profile.photos)
-
     let user = await User.findOne({ facebookId: profile.id });
 
     if (!user) {
@@ -20,7 +18,7 @@ passport.use(new FacebookStrategy({
         facebookId: profile.id,
         name: profile.displayName,
         email: profile.email,
-        image_url: profile.photos[0].value
+        image_url: profile.photos[0].value,
       });
       await user.save();
     }
