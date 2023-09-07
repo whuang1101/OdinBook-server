@@ -2,11 +2,14 @@ const express=  require("express");
 const app = express();
 require("dotenv").config()
 const port = process.env.PORT;
-const cookieSession = require("cookie-session");
 require("./auth/facebookAuth")
+require("./auth/localAuth")
 const passport = require('passport');
 const mongoose = require("mongoose");
 const cors = require("cors")
+const session = require("express-session")
+//defining routers
+
 
 //defining routers
 const authRouter = require("./routes/authRouter");
@@ -23,16 +26,32 @@ db.on("error", console.error.bind(console, "MongoDB connection error"));
 //Add models 
 const User = require("./models/user");
 //enables cookies for 24 hours
-app.use(cookieSession({
-  name: "session",
-  keys: [process.env.KEY],
-  maxAge: 24 * 60 * 60 * 1000,
+app.use(session({
+  secret: process.env.KEY,
+  resave: false,
+  saveUninitialized: false,
 }));
 
 
 app.use(passport.initialize());
 app.use(passport.session());
 
+
+passport.serializeUser((user, done) => {
+  console.log(user);
+  done(null, user.id); // Serialize user by their ID
+});
+
+passport.deserializeUser(async (id, done) => {
+  console.log(id);
+  try {
+    const user = await User.findOne({_id:id});
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
+
+});
 //allows for connecting with cross origin
 app.use(cors({
     origin:"http://localhost:5173",

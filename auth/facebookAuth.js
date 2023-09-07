@@ -6,9 +6,11 @@ passport.use(new FacebookStrategy({
   clientID: process.env.FACEBOOK_APP_ID,
   clientSecret: process.env.FACEBOOK_APP_SECRET,
   callbackURL: `${process.env.SELF}/auth/facebook/callback`,
+  auth_type: "reauthenticate",
   enableProof: true,
   profileFields: ["id", "displayName", "email","photos"],
   scope: ["email"],
+  
 }, async (accessToken, refreshToken, profile, done) => {
   try {
     let user = await User.findOne({ facebookId: profile.id });
@@ -29,16 +31,3 @@ passport.use(new FacebookStrategy({
     return done(err, null);
   }
 }));
-
-passport.serializeUser((user, done) => {
-  done(null, user.id); // Serialize user by their ID
-});
-
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await User.findById(id);
-    done(null, user);
-  } catch (err) {
-    done(err, null);
-  }
-});

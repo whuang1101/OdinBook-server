@@ -6,7 +6,7 @@ const userSchema =  new Schema({
     password: {type:String},
     name: {type:String,required: true},
     comments: [{type: mongoose.Schema.Types.ObjectId} ],
-    friend_list: [{type: mongoose.Schema.Types.ObjectId, ref: "Users"}],
+    friends_list: [{type: mongoose.Schema.Types.ObjectId, ref: "Users"}],
     image_url: {type:String},
     posts: [{type: mongoose.Schema.Types.ObjectId, ref: "Posts"} ],
     lives: {type:String},

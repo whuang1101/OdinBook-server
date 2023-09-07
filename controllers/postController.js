@@ -2,7 +2,7 @@
  const User = require("../models/user");
  const Post = require("../models/post");
 const user = require("../models/user");
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
  //this allows post to be made
  module.exports.post = asyncHandler(async(req,res,next) => {
     const findUser = await User.findById(req.body.userId);
