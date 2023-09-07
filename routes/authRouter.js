@@ -21,5 +21,9 @@ router.get("/login/success", (req,res,next)=> {
     res.status(404).json(false);
   }
 })
+router.get('/logout', (req, res) => {
+  console.log(req.logout)
+  req.logout(); 
+});
 
 module.exports = router;
