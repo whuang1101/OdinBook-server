@@ -14,6 +14,7 @@ const session = require("express-session")
 //defining routers
 const authRouter = require("./routes/authRouter");
 const postRouter = require("./routes/postRouter");
+const friendRequestRouter = require("./routes/friendRequestRouter");
 app.use(express.json());
 
 //connect mongoose
@@ -38,12 +39,10 @@ app.use(passport.session());
 
 
 passport.serializeUser((user, done) => {
-  console.log(user);
   done(null, user.id); // Serialize user by their ID
 });
 
 passport.deserializeUser(async (id, done) => {
-  console.log(id);
   try {
     const user = await User.findOne({_id:id});
     done(null, user);
@@ -60,6 +59,7 @@ app.use(cors({
 }))
 
 app.use("/auth",authRouter)
+app.use("/friends", friendRequestRouter)
 app.use("/posts",postRouter)
 app.listen(port, "0.0.0.0", () => {
     console.log(`Server listening on ${port}`);

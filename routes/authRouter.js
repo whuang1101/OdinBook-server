@@ -35,7 +35,6 @@ router.get("/login/success", (req,res,next)=> {
   }
 })
 router.post("/logout", function(req, res, next) {
-  console.log(req.user)
   req.logout();
   res.redirect(`/`);
 })
