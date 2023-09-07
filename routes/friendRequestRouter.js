@@ -8,5 +8,6 @@ router.get("/request/:id", friendRequestController.getRequests);
 router.post("/add", friendRequestController.addFriend)
 router.post("/remove", friendRequestController.removeRequest)
 
+router.put("/request/accept", friendRequestController.acceptRequest)
 
 module.exports = router;

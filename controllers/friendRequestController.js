@@ -111,3 +111,12 @@ module.exports.getRequests = asyncHandler(async(req,res,next) => {
         res.status(404).json({message:"No pending requests found"})
     }
 })
+module.exports.acceptRequest = asyncHandler(async(req,res,next)=> {
+    const requestId = req.body.id;
+    const updateRequest = await friendRequest.findByIdAndUpdate(requestId, {status: 1});
+    if(updateRequest){
+        const updateSender = await User.findByIdAndUpdate(updateRequest.sender, {$push: {friends_list: updateRequest.recipient}});
+        const updateRecipient = await User.findByIdAndUpdate(updateRequest.recipient, {$push: {friends_list: updateRequest.sender}});
+    }
+
+})
