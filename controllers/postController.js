@@ -31,10 +31,18 @@ const mongoose = require("mongoose");
 // this makes it so that you can get all posts either public/your friends or your own
 module.exports.get = asyncHandler(async(req,res,next) => {
     const userId = req.params.userId;
-
+    let friendsId = await User.findById(userId);
+    friendsId = friendsId.friends_list;
+    let allPosts = [];
+    for(let i =0; i < friendsId.length; i ++){ 
+        const friendsPost = await Post.find({author: friendsId[i]}).populate("author");
+        allPosts = allPosts.concat(friendsPost);
+    }
     // retrieving personal posts
     let posts = await Post.find({author: userId}).populate("author").sort({date: -1});
-    res.status(200).json(posts);
+    allPosts = allPosts.concat(posts);
+    allPosts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    res.status(200).json(allPosts);
 })
 
 // adds a like to a post

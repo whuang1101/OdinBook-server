@@ -9,12 +9,13 @@ const mongoose = require("mongoose");
 const cors = require("cors")
 const session = require("express-session")
 //defining routers
-
+const {USERS} = require("./faker");
 
 //defining routers
 const authRouter = require("./routes/authRouter");
 const postRouter = require("./routes/postRouter");
 const friendRequestRouter = require("./routes/friendRequestRouter");
+const userRouter = require("./routes/userRouter")
 app.use(express.json());
 
 //connect mongoose
@@ -33,7 +34,15 @@ app.use(session({
   saveUninitialized: false,
 }));
 
-
+// creates random users
+async function saveFakeUsers(usersArray){
+for(let i = 0; i < usersArray.length; i++) {
+  const user = new User(usersArray[i]);
+  const saveUser = await user.save();
+  if(saveUser) {
+    console.log("saved")
+  }
+}}
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -61,6 +70,7 @@ app.use(cors({
 app.use("/auth",authRouter)
 app.use("/friends", friendRequestRouter)
 app.use("/posts",postRouter)
+app.use("/users", userRouter)
 app.listen(port, "0.0.0.0", () => {
     console.log(`Server listening on ${port}`);
 })
