@@ -122,10 +122,8 @@ module.exports.acceptRequest = asyncHandler(async(req,res,next)=> {
 })
 module.exports.getAllFriends = asyncHandler(async(req,res,next) => {
     const id = req.params.id;
-    console.log(req.params.id)
     const userFriend = await User.findById(id).populate("friends_list");
     if(userFriend){
-        console.log(userFriend.friends_list);
         res.status(200).json(userFriend.friends_list);
     }
 })
