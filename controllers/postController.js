@@ -45,6 +45,18 @@ module.exports.get = asyncHandler(async(req,res,next) => {
     res.status(200).json(allPosts);
 })
 
+// just user posts
+module.exports.getSelfPosts = asyncHandler(async(req,res,next) => {
+    const userId = req.params.userId;
+    let posts = await Post.find({author: userId}).populate("author").sort({date: 1});
+    if(posts){
+        res.status(200).json(posts)
+    }
+    else{
+        res.status(404)
+    }
+})
+
 // adds a like to a post
 module.exports.addLike = asyncHandler(async(req,res,next) => {
     const postId = req.body.postId;

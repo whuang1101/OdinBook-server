@@ -9,4 +9,5 @@ module.exports.getUser = asyncHandler(async(req,res, next) => {
     else{
         res.status(404).json({message:"User not found"})
     }
+
 })
