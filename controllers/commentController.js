@@ -1,5 +1,5 @@
 const asyncHandler = require("express-async-handler");
-const Message = require("../models/comment");
+const Comment = require("../models/comment");
 const Post = require("../models/post")
 const User = require("../models/user")
 module.exports.addPost = asyncHandler(async(req, res, next) => {
@@ -7,7 +7,7 @@ module.exports.addPost = asyncHandler(async(req, res, next) => {
     const post = await Post.findById(postId);
     const userId = req.body.userId;
     const text= req.body.text;
-    const newMessage = new Message({
+    const newMessage = new Comment({
         date: new Date(),
         text: text,
         comments: [],
@@ -29,5 +29,40 @@ module.exports.addPost = asyncHandler(async(req, res, next) => {
     }
     else{
         res.status(404).json({message: "failed to save"})
+    }
+})
+
+module.exports.getComment = asyncHandler(async(req,res,next) => {
+    const commentId = req.params.id;
+    const findComment = await Comment.findById(commentId);
+    if(findComment){
+        res.status(200).json(findComment)
+    }
+    else{
+        res.status(404).json({message:" message not found"})
+    }
+})
+module.exports.editComment = asyncHandler(async(req,res,next) => {
+    const commentId = req.body.id;
+    const updatedText = req.body.text;
+    const updatedComment= await Comment.findByIdAndUpdate(commentId, {text:updatedText, edited:true})
+    if(updatedComment){
+        res.status(200)
+    }
+    else{
+        res.status(404)
+    }
+})
+module.exports.deleteComment = asyncHandler(async(req,res,next) => {
+    const commentId = req.body.id;
+    const findComment = await Comment.findById(commentId);
+    const deletedComment= await Comment.findByIdAndDelete(commentId);
+    const deleteCommentUser = await User.findByIdAndUpdate(findComment.author, {$pull:{comments:commentId}});
+    if(deletedComment && deleteCommentUser){
+        console.log("delete")
+        res.status(200)
+    }
+    else{
+        res.status(404)
     }
 })
