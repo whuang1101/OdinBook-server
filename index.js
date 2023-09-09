@@ -8,14 +8,15 @@ const passport = require('passport');
 const mongoose = require("mongoose");
 const cors = require("cors")
 const session = require("express-session")
-//defining routers
 const {USERS} = require("./faker");
+const comment = require("./models/comment")
 
 //defining routers
 const authRouter = require("./routes/authRouter");
 const postRouter = require("./routes/postRouter");
 const friendRequestRouter = require("./routes/friendRequestRouter");
-const userRouter = require("./routes/userRouter")
+const userRouter = require("./routes/userRouter");
+const commentRouter = require("./routes/commentRouter")
 app.use(express.json());
 
 //connect mongoose
@@ -71,6 +72,7 @@ app.use("/auth",authRouter)
 app.use("/friends", friendRequestRouter)
 app.use("/posts",postRouter)
 app.use("/users", userRouter)
+app.use("/comments", commentRouter)
 app.listen(port, "0.0.0.0", () => {
     console.log(`Server listening on ${port}`);
 })
