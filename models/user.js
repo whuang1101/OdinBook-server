@@ -13,6 +13,7 @@ const userSchema =  new Schema({
     studies_at: {type:String},
     job: {type:String},
     facebookId: {type:String},
+    bio: {type:String},
 })
 
 module.exports = mongoose.model("Users", userSchema)
