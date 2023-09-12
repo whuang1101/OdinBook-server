@@ -67,7 +67,7 @@ app.use(cors({
     methods: "GET, POST, PUT, DELETE",
     credentials: true,
 }))
-
+app.use('/uploads', express.static('uploads'));
 app.use("/auth",authRouter)
 app.use("/friends", friendRequestRouter)
 app.use("/posts",postRouter)

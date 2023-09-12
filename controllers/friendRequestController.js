@@ -72,13 +72,23 @@ module.exports.removeRequest = asyncHandler(async (req, res, next) => {
     const senderId = req.body.senderId;
     const recipientId = req.body.recipientId;
     const findRequest = await friendRequest.findOneAndDelete({$or:[{sender: senderId,recipient:recipientId }, {recipient:senderId, sender:recipientId}]});
+
     if(findRequest){
         res.status(200).json("Deleted");
     }
     else{
         res.status(404).json("Request not found");
     }
-
+});
+module.exports.cancelFriendRequest = asyncHandler(async(req, res, next) => {
+    const requestId = req.body.recipientId;
+    const deleteRequest = await FriendRequest.findByIdAndDelete(requestId);
+    if(deleteRequest) {
+        res.json(200);
+    }
+    else{
+        res.json(404);
+    }
 });
 // Gets all pending requests from users side
 module.exports.getPending = asyncHandler(async(req,res,next) => {
@@ -117,6 +127,15 @@ module.exports.acceptRequest = asyncHandler(async(req,res,next)=> {
     if(updateRequest){
         const updateSender = await User.findByIdAndUpdate(updateRequest.sender, {$push: {friends_list: updateRequest.recipient}});
         const updateRecipient = await User.findByIdAndUpdate(updateRequest.recipient, {$push: {friends_list: updateRequest.sender}});
+        if(updateSender && updateRecipient){
+            res.status(200).json("Friend Added");
+        }
+        else{
+            res.status(404).json("Friend not added");
+        }
+    }
+    else{
+        res.status(404).json("Request not found");
     }
 
 })
