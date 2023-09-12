@@ -20,7 +20,8 @@ const mongoose = require("mongoose");
                 findUser._id, 
                 { $push: { posts: save._id } 
             })
-            res.status(200);
+            console.log("saved");
+            res.status(200).json("Post Saved");
             }
     }
     else{
@@ -129,7 +130,7 @@ module.exports.editPost = asyncHandler(async(req,res,next) => {
     const updatedText = req.body.text;
     const updatedPost= await Post.findByIdAndUpdate(postId, {text:updatedText, edited:true})
     if(updatedPost){
-        res.status(200)
+        res.status(200).json({message: "Post edited successfully"})
     }
     else{
         res.status(404)

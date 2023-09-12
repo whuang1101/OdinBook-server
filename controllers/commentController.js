@@ -47,7 +47,7 @@ module.exports.editComment = asyncHandler(async(req,res,next) => {
     const updatedText = req.body.text;
     const updatedComment= await Comment.findByIdAndUpdate(commentId, {text:updatedText, edited:true})
     if(updatedComment){
-        res.status(200)
+        res.status(200).json({message: "Message updated successfully"});
     }
     else{
         res.status(404)
@@ -60,7 +60,7 @@ module.exports.deleteComment = asyncHandler(async(req,res,next) => {
     const deleteCommentUser = await User.findByIdAndUpdate(findComment.author, {$pull:{comments:commentId}});
     if(deletedComment && deleteCommentUser){
         console.log("delete")
-        res.status(200)
+        res.status(200).json({message: "Comment Deleted"})
     }
     else{
         res.status(404)
