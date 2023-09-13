@@ -37,12 +37,12 @@ app.use(session({
 
 // creates random users
 async function saveFakeUsers(usersArray){
-for(let i = 0; i < usersArray.length; i++) {
-  const user = new User(usersArray[i]);
-  const saveUser = await user.save();
-  if(saveUser) {
-    console.log("saved")
-  }
+  for(let i = 0; i < usersArray.length; i++) {
+    const user = new User(usersArray[i]);
+    const saveUser = await user.save();
+    if(saveUser) {
+      console.log("saved")
+    }
 }}
 app.use(passport.initialize());
 app.use(passport.session());

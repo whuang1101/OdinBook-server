@@ -21,6 +21,7 @@ passport.use(new FacebookStrategy({
         name: profile.displayName,
         email: profile.email,
         image_url: profile.photos[0].value,
+        bio: ""
       });
       await user.save();
     }

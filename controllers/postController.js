@@ -20,7 +20,6 @@ const mongoose = require("mongoose");
                 findUser._id, 
                 { $push: { posts: save._id } 
             })
-            console.log("saved");
             res.status(200).json("Post Saved");
             }
     }

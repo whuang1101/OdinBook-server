@@ -22,14 +22,15 @@ function createRandomUser() {
       name: faker.person.fullName(),
       lives: faker.location.city(),
       job: faker.person.jobTitle(),
-      university: getRandomElement(universities),
+      studies_at: getRandomElement(universities),
+      bio: "",
       friends_list: [],
       comments: [],
     };
   }
   
   const USERS = faker.helpers.multiple(createRandomUser, {
-    count: 18,
+    count: 1,
   });
   
   module.exports = {

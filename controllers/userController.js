@@ -45,7 +45,6 @@ module.exports.removeFriend = asyncHandler(async(req,res,next) => {
     const findFriend = await User.findByIdAndUpdate(friendId, {$pull: {friends_list: id}});
     const findFriendRequest = await Friend.findOneAndDelete({$or: [{sender: id, recipient: friendId}, {sender: friendId, recipient:id}]});
     if(findUser, findFriend, findFriend){
-        console.log("removed friend")
         res.status(200).json({message: "friend removed"});
     }
     else{ 
@@ -68,17 +67,13 @@ module.exports.postNewUser = asyncHandler(async(req,res,next) => {
         studies_at: body.studies,
         bio: ""
     })
-    console.log(newUser);
     bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
         newUser.password = hashedPassword;
-        console.log(newUser);
         const saveUser = await newUser.save();
-
         if(saveUser){
-            console.log("saved");
             res.status(200).json({message: "User Saved"});
         }else{
-            console.log("not saved")
+            res.status(404).json({message: "Not saved"});
         }
       });
 })
