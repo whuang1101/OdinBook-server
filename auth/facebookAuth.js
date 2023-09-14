@@ -33,7 +33,6 @@ passport.use(new FacebookStrategy({
       await user.save();
     }
     // Return the user to Passport.js
-    console.log(user);
     return done(null, user);
   } catch (err) {
     console.log("bad");
