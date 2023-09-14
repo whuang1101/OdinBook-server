@@ -7,7 +7,7 @@ require("./auth/localAuth")
 const passport = require('passport');
 const mongoose = require("mongoose");
 const cors = require("cors")
-const session = require("express-session")
+const session = require("cookie-session")
 const {USERS} = require("./faker");
 const comment = require("./models/comment")
 
