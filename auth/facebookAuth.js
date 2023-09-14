@@ -5,7 +5,7 @@ const User = require("../models/user");
 passport.use(new FacebookStrategy({
   clientID: process.env.FACEBOOK_APP_ID,
   clientSecret: process.env.FACEBOOK_APP_SECRET,
-  callbackURL: `${process.env.SELF}/auth/facebook/callback`,
+  callbackURL: `https://odinbook-server-production-a812.up.railway.app/auth/facebook/callback`,
   auth_type: "reauthenticate",
   enableProof: true,
   profileFields: ["id", "displayName", "email", "picture.type(large)"],
