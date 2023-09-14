@@ -10,6 +10,8 @@ const cors = require("cors")
 const session = require("cookie-session")
 const {USERS} = require("./faker");
 const comment = require("./models/comment")
+const cookieParser = require('cookie-parser');
+
 
 //defining routers
 const authRouter = require("./routes/authRouter");
@@ -36,6 +38,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
 }));
+app.use(cookieParser());
 
 // creates random users
 async function saveFakeUsers(usersArray){

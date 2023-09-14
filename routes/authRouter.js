@@ -10,7 +10,6 @@ function(req, res) {
   res.status(200).json(req.user)
 })
 router.get("/local/success", (req,res,next)=>{
-  console.log("successful")
   if(req.user){
     res.status(200).json(req.user);
   }
@@ -26,10 +25,12 @@ router.get('/facebook',
 router.get('/facebook/callback',
   passport.authenticate('facebook', { failureRedirect: `${process.env.ORIGIN}/login` }),
   function(req, res) {
+    console.log(req.cookies)
     res.redirect(`${process.env.ORIGIN}`);
   });
 router.get("/login/success", (req,res,next)=> {
-  console.log(req);
+  console.log(req.cookies)
+  console.log(req.session);
   console.log("successful")
   if(req.user){
     res.status(200).json(req.user);
