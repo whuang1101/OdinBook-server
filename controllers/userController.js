@@ -65,7 +65,7 @@ module.exports.postNewUser = asyncHandler(async(req,res,next) => {
         name: body.first_name + " " + body.last_name,
         comments: [],
         friends_list: [mongoDBId],
-        image_url: req.file ? `${process.env.SELF}/uploads/${req.file.filename}` : `${process.env.SELF}/uploads/anonymous.jpeg`,
+        image_url: req.file ? `https://odinbook-server-production-a812.up.railway.app/uploads/${req.file.filename}` : `https://odinbook-server-production-a812.up.railway.app/uploads/anonymous.jpeg`,
         posts: [],
         lives: body.live,
         job: body.job,
