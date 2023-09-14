@@ -28,6 +28,8 @@ db.on("error", console.error.bind(console, "MongoDB connection error"));
 
 //Add models 
 const User = require("./models/user");
+const Post = require("./models/post");
+const Comment = require("./models/comment")
 //enables cookies for 24 hours
 app.use(session({
   secret: process.env.KEY,
@@ -47,6 +49,10 @@ async function saveFakeUsers(usersArray){
 app.use(passport.initialize());
 app.use(passport.session());
 
+async function deleteAll(userId) {
+  await Comment.deleteMany({author: userId})
+  await Post.deleteMany({author: userId});
+}
 
 passport.serializeUser((user, done) => {
   done(null, user.id); // Serialize user by their ID

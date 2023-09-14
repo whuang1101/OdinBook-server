@@ -8,20 +8,27 @@ passport.use(new FacebookStrategy({
   callbackURL: `${process.env.SELF}/auth/facebook/callback`,
   auth_type: "reauthenticate",
   enableProof: true,
-  profileFields: ["id", "displayName", "email","photos"],
+  profileFields: ["id", "displayName", "email", "picture.type(large)"],
   scope: ["email"],
   
 }, async (accessToken, refreshToken, profile, done) => {
   try {
     let user = await User.findOne({ facebookId: profile.id });
-
+    console.log(profile._json.email);
     if (!user) {
       user = new User({
         facebookId: profile.id,
-        name: profile.displayName,
         email: profile.email,
-        image_url: profile.photos[0].value,
-        bio: ""
+        name: profile.displayName,
+        email: profile._json.email,
+        image_url: profile.photos ? profile.photos[0].value : '../uploads/anonymous.jpeg',
+        bio: "",
+        job: "",
+        lives: "",
+        studies_at: "",
+        friends_list: [],
+        comments: [],
+        posts: []
       });
       await user.save();
     }
