@@ -75,7 +75,7 @@ passport.deserializeUser(async (id, done) => {
 });
 //allows for connecting with cross origin
 app.use(cors({
-    origin: process.env.ORIGIN,
+    origin: `${process.env.ORIGIN}`,
     methods: "GET, POST, PUT, DELETE",
     credentials: true,
 }))
