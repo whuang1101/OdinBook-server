@@ -104,7 +104,7 @@ module.exports.editName = asyncHandler(async(req,res) => {
     }
 })
 module.exports.editProfileImage = asyncHandler(async(req,res) => {
-    const newImage = await User.findByIdAndUpdate(req.body.id,{image_url: `${process.env.SELF}/uploads/${req.file.filename}`})
+    const newImage = await User.findByIdAndUpdate(req.body.id,{image_url: `https://odinbook-server-production-a812.up.railway.app/uploads/${req.file.filename}`})
     if(newImage) {
         res.status(200).json({message: "Image updated"});
     }
