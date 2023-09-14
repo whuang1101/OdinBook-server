@@ -55,13 +55,14 @@ async function deleteAll(userId) {
 }
 
 passport.serializeUser((user, done) => {
+  console.log("serialize")
   done(null, user.id); // Serialize user by their ID
 });
 
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findOne({_id:id});
-    console.log(user)
+    console.log("deserialize")
     done(null, user);
   } catch (err) {
     console.log("ok")
