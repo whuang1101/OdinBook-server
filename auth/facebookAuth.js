@@ -14,7 +14,6 @@ passport.use(new FacebookStrategy({
 }, async (accessToken, refreshToken, profile, done) => {
   try {
     let user = await User.findOne({ facebookId: profile.id });
-    console.log(profile._json.email);
     if (!user) {
       user = new User({
         facebookId: profile.id,
