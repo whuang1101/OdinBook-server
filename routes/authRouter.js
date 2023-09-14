@@ -6,9 +6,11 @@ require("dotenv").config();
 // Define the Facebook authentication route
 router.post("/local",passport.authenticate('local', { failureRedirect: '/login' }),
 function(req, res) {
+  console.log(req.user);
   res.status(200).json(req.user)
 })
 router.get("/local/success", (req,res,next)=>{
+  console.log(req.user);
   if(req.user){
     res.status(200).json(req.user);
   }
