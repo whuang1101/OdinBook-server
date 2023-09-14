@@ -27,6 +27,7 @@ router.get('/facebook/callback',
     res.redirect(`${process.env.ORIGIN}`);
   });
 router.get("/login/success", (req,res,next)=> {
+  console.log(req.user);
   if(req.user){
     res.status(200).json(req.user);
   }
