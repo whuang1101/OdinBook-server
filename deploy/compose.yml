@@ -1,0 +1,34 @@
+services:
+  client:
+    image: ghcr.io/whuang1101/odinbook:latest
+    restart: unless-stopped
+    expose:
+      - "80"
+
+  server:
+    image: ghcr.io/whuang1101/odinbook-server:latest
+    restart: unless-stopped
+    env_file:
+      - ./server.env
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+      API_DOMAIN: ${API_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - server
+
+volumes:
+  caddy_data:
+  caddy_config:

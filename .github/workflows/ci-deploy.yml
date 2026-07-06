@@ -1,0 +1,57 @@
+name: CI and Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: whuang1101/odinbook-server
+
+jobs:
+  build-test-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - uses: docker/login-action@v3
+        if: github.event_name == 'push'
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        if: github.event_name == 'push'
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+  deploy:
+    needs: build-test-publish
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.LEARNING_VM_HOST }}
+          username: ${{ secrets.LEARNING_VM_USER }}
+          key: ${{ secrets.LEARNING_VM_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/odinbook
+            docker compose pull server
+            docker compose up -d server caddy
+            docker compose exec -T server node -e "fetch('http://localhost:3000/health').then(r => { if (!r.ok) process.exit(1); })"
