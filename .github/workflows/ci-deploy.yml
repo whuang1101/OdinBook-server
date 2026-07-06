@@ -43,15 +43,25 @@ jobs:
     needs: build-test-publish
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    env:
+      LEARNING_VM_HOST: ${{ secrets.LEARNING_VM_HOST }}
+      LEARNING_VM_USER: ${{ secrets.LEARNING_VM_USER }}
+      LEARNING_VM_SSH_KEY: ${{ secrets.LEARNING_VM_SSH_KEY }}
     steps:
+      - name: Skip deploy when SSH secrets are absent
+        if: env.LEARNING_VM_HOST == '' || env.LEARNING_VM_USER == '' || env.LEARNING_VM_SSH_KEY == ''
+        run: echo "Skipping deploy because learning-vm SSH secrets are not configured."
       - uses: appleboy/ssh-action@v1.2.0
+        if: env.LEARNING_VM_HOST != '' && env.LEARNING_VM_USER != '' && env.LEARNING_VM_SSH_KEY != ''
         with:
-          host: ${{ secrets.LEARNING_VM_HOST }}
-          username: ${{ secrets.LEARNING_VM_USER }}
-          key: ${{ secrets.LEARNING_VM_SSH_KEY }}
+          host: ${{ env.LEARNING_VM_HOST }}
+          username: ${{ env.LEARNING_VM_USER }}
+          key: ${{ env.LEARNING_VM_SSH_KEY }}
           script: |
             set -e
+            cd /opt/odinbook/src/OdinBook-server
+            git fetch origin main
+            git reset --hard origin/main
             cd /opt/odinbook
-            docker compose pull server
-            docker compose up -d server caddy
+            docker compose up -d --build server caddy
             docker compose exec -T server node -e "fetch('http://localhost:3000/health').then(r => { if (!r.ok) process.exit(1); })"
