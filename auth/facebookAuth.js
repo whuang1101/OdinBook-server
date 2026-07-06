@@ -5,7 +5,7 @@ const User = require("../models/user");
 passport.use(new FacebookStrategy({
   clientID: process.env.FACEBOOK_APP_ID,
   clientSecret: process.env.FACEBOOK_APP_SECRET,
-  callbackURL: `https://odinbook-server-production-a812.up.railway.app/auth/facebook/callback`,
+  callbackURL: `${process.env.PUBLIC_API_URL || "http://localhost:3000"}/auth/facebook/callback`,
   auth_type: "reauthenticate",
   enableProof: true,
   profileFields: ["id", "displayName", "email", "picture.type(large)"],
@@ -17,10 +17,9 @@ passport.use(new FacebookStrategy({
     if (!user) {
       user = new User({
         facebookId: profile.id,
-        email: profile.email,
         name: profile.displayName,
         email: profile._json.email,
-        image_url: profile.photos ? profile.photos[0].value : '../uploads/anonymous.jpeg',
+        image_url: profile.photos ? profile.photos[0].value : `${process.env.PUBLIC_API_URL || "http://localhost:3000"}/uploads/anonymous.jpeg`,
         bio: "",
         job: "",
         lives: "",

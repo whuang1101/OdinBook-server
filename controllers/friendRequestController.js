@@ -4,48 +4,51 @@ const FriendRequest = require("../models/friendRequest")
 const mongoose = require("mongoose");
 const friendRequest = require("../models/friendRequest");
 
-// fix later so that it can filter out people who are already friends and friend requests pending
 module.exports.getSuggestions = asyncHandler(async(req,res,next) => {
-    let allUsers = await User.find().exec();
     const userId = req.params.userId;
-    const userIdAsObjectId = new mongoose.Types.ObjectId(userId);
-    allUsers = allUsers.filter(user => !user._id.equals(userIdAsObjectId));
-    const allFriendRequests = await FriendRequest.find({
+    if (String(req.user._id) !== String(userId)) {
+        return res.status(403).json({ message: "You can only view your own suggestions" });
+    }
+
+    const user = await User.findById(userId).select("friends_list");
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
+    }
+
+    const friendRequests = await FriendRequest.find({
         $or: [{ sender: req.params.userId }, { recipient: req.params.userId }]
-      }).exec();
-      if(allFriendRequests.length !== 0){
-    // if they have a friend request out already delete them from users
-    const allPotentialId = allFriendRequests.reduce((userId, current) => {
-        if(!userId.includes(current.sender)){
-            userId.push(current.sender)
-        }
-        if(!userId.includes(current.recipient)){
-            userId.push(current.recipient)
-        }
-        return userId;
-    },[])
-    const filteredUsers = [];
-    for(let i =0; i< allUsers.length; i ++) {
-        let a = 0
-        for(let j = 0; j < allPotentialId.length; j ++){
-            if(!allPotentialId[j].equals(allUsers[i]._id)){
-                a += 1;
-            }
-        }
-        if( a === allPotentialId.length){
-            filteredUsers.push(allUsers[i]);
-        }
-    }
-    res.status(200).json(filteredUsers)}
-    else{
-        res.status(200).json(allUsers)
-    }
+    }).select("sender recipient").exec();
+    const excludedIds = new Set([String(userId), ...user.friends_list.map(String)]);
+
+    friendRequests.forEach((request) => {
+        excludedIds.add(String(request.sender));
+        excludedIds.add(String(request.recipient));
+    });
+
+    const suggestions = await User.find({
+        _id: { $nin: Array.from(excludedIds).map((id) => new mongoose.Types.ObjectId(id)) },
+    }).limit(50);
+
+    res.status(200).json(suggestions)
 }   
 )
 //Create friend Request
 module.exports.addFriend = asyncHandler(async (req, res, next) => {
     const senderId = req.body.senderId;
     const recipientId = req.body.recipientId;
+    if (String(req.user._id) !== String(senderId)) {
+        return res.status(403).json({ message: "You can only send requests as yourself" });
+    }
+    if (String(senderId) === String(recipientId)) {
+        return res.status(400).json({ message: "Cannot friend yourself" });
+    }
+
+    const existing = await FriendRequest.findOne({
+        $or:[{sender: senderId, recipient: recipientId}, {sender: recipientId, recipient: senderId}]
+    });
+    if (existing) {
+        return res.status(200).json({ message: "Friend request already exists" });
+    }
     
     const newFriendRequest = new FriendRequest({
         date: new Date(),
@@ -82,17 +85,27 @@ module.exports.removeRequest = asyncHandler(async (req, res, next) => {
 });
 module.exports.cancelFriendRequest = asyncHandler(async(req, res, next) => {
     const requestId = req.body.recipientId;
+    const request = await FriendRequest.findById(requestId);
+    if (!request) {
+        return res.status(404).json({ message: "Request not found" });
+    }
+    if (String(request.sender) !== String(req.user._id)) {
+        return res.status(403).json({ message: "You can only cancel your own requests" });
+    }
     const deleteRequest = await FriendRequest.findByIdAndDelete(requestId);
     if(deleteRequest) {
-        res.json(200);
+        res.status(200).json({ message: "Request cancelled" });
     }
     else{
-        res.json(404);
+        res.status(404).json({ message: "Request not found" });
     }
 });
 // Gets all pending requests from users side
 module.exports.getPending = asyncHandler(async(req,res,next) => {
     const id = req.params.id;
+    if (String(req.user._id) !== String(id)) {
+        return res.status(403).json({ message: "You can only view your own pending requests" });
+    }
     const findPending = await FriendRequest.find(
     {
         sender: id,
@@ -108,6 +121,9 @@ module.exports.getPending = asyncHandler(async(req,res,next) => {
 })
 module.exports.getRequests = asyncHandler(async(req,res,next) => {
     const id = req.params.id;
+    if (String(req.user._id) !== String(id)) {
+        return res.status(403).json({ message: "You can only view your own requests" });
+    }
     const findPending = await FriendRequest.find(
     {
         recipient: id,
@@ -125,8 +141,11 @@ module.exports.acceptRequest = asyncHandler(async(req,res,next)=> {
     const requestId = req.body.id;
     const updateRequest = await friendRequest.findByIdAndUpdate(requestId, {status: 1});
     if(updateRequest){
-        const updateSender = await User.findByIdAndUpdate(updateRequest.sender, {$push: {friends_list: updateRequest.recipient}});
-        const updateRecipient = await User.findByIdAndUpdate(updateRequest.recipient, {$push: {friends_list: updateRequest.sender}});
+        if (String(updateRequest.recipient) !== String(req.user._id)) {
+            return res.status(403).json({ message: "You can only accept requests sent to you" });
+        }
+        const updateSender = await User.findByIdAndUpdate(updateRequest.sender, {$addToSet: {friends_list: updateRequest.recipient}});
+        const updateRecipient = await User.findByIdAndUpdate(updateRequest.recipient, {$addToSet: {friends_list: updateRequest.sender}});
         if(updateSender && updateRecipient){
             res.status(200).json("Friend Added");
         }

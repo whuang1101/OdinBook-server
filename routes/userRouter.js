@@ -2,27 +2,18 @@ const express = require("express");
 const router = express.Router();
 const multer  = require('multer')
 const userController = require("../controllers/userController")
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, 'uploads/')
-    },
-    filename: function (req, file, cb) {
-      const uniqueSuffix = Date.now() ;
-      cb(null,+ uniqueSuffix + file.originalname)
-    }
-  })
+const { ensureAuthenticated } = require("../middleware/auth");
+const upload = multer({ storage: multer.memoryStorage() })
   
-  const upload = multer({ storage: storage })
-  
-router.get("/:id", userController.getUser);
 router.get("/email/:email", userController.getEmail);
+router.get("/:id", ensureAuthenticated, userController.getUser);
 router.post("/newUser",upload.single("image_url"), userController.postNewUser);
-router.put("/name/edit",userController.editName)
-router.put("/edit/bio", userController.editBio);
-router.put("/edit/details", userController.editDetails);
-router.put("/friend/remove", userController.removeFriend);
-router.put("/image/edit",upload.single("image_url"), userController.editProfileImage);
-router.delete("/", userController.deleteUser);
+router.put("/name/edit", ensureAuthenticated, userController.editName)
+router.put("/edit/bio", ensureAuthenticated, userController.editBio);
+router.put("/edit/details", ensureAuthenticated, userController.editDetails);
+router.put("/friend/remove", ensureAuthenticated, userController.removeFriend);
+router.put("/image/edit", ensureAuthenticated, upload.single("image_url"), userController.editProfileImage);
+router.delete("/", ensureAuthenticated, userController.deleteUser);
 
 
 module.exports = router;

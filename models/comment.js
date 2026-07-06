@@ -11,4 +11,7 @@ const commentSchema = new Schema({
     edited: {type:Boolean}
 })
 
+commentSchema.index({ post: 1, date: 1 });
+commentSchema.index({ author: 1 });
+
 module.exports = mongoose.model("Comments", commentSchema);

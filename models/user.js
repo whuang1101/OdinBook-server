@@ -16,4 +16,7 @@ const userSchema =  new Schema({
     bio: {type:String},
 })
 
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ facebookId: 1 }, { sparse: true });
+
 module.exports = mongoose.model("Users", userSchema)

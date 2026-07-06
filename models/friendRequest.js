@@ -8,4 +8,7 @@ const friendRequestSchema = new Schema({
     date: {type: String, required: true}
 })
 
+friendRequestSchema.index({ sender: 1, recipient: 1, status: 1 });
+friendRequestSchema.index({ recipient: 1, status: 1 });
+
 module.exports = mongoose.model("Friend-requests", friendRequestSchema);
