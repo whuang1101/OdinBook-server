@@ -10,8 +10,18 @@ services:
     restart: unless-stopped
     env_file:
       - ./server.env
+    depends_on:
+      - mongo
     expose:
       - "3000"
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    expose:
+      - "27017"
 
   caddy:
     image: caddy:2-alpine
@@ -27,8 +37,10 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
+      - client
       - server
 
 volumes:
+  mongo_data:
   caddy_data:
   caddy_config:
