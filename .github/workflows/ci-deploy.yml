@@ -64,4 +64,11 @@ jobs:
             git reset --hard origin/main
             cd /opt/odinbook
             docker compose up -d --build server caddy
-            docker compose exec -T server node -e "fetch('http://localhost:3000/health').then(r => { if (!r.ok) process.exit(1); })"
+            for attempt in $(seq 1 30); do
+              if docker compose exec -T server node -e "fetch('http://127.0.0.1:3000/health').then(r => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1))"; then
+                exit 0
+              fi
+              sleep 2
+            done
+            docker compose logs --tail=100 server
+            exit 1
