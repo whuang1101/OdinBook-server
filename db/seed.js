@@ -36,8 +36,9 @@ async function seed() {
   const passwordHash = await bcrypt.hash("Abcd1234", 10);
   const apiUrl = getPublicApiUrl();
   const avatars = [
-    "williamstown-1057646.jpg", "pexels-pixabay-220453.jpg", "charlesdeluvio-Mv9hjnEUHR4-unsplash.jpg",
-    "facebookanon.jpg", "anonymous.jpeg", "download (4).jpeg", "facebookanon.jpg", "anonymous.jpeg",
+    "williamstown-1057646.jpg", "1694639484961pexels-pixabay-220453.jpg",
+    "1694639507987charlesdeluvio-Mv9hjnEUHR4-unsplash.jpg", "facebookanon.jpg",
+    "anonymous.jpeg", "1694639456049download (4).jpeg", "facebookanon.jpg", "anonymous.jpeg",
   ];
   const people = [
     [ids.joe, "joebob1@gmail.com", "Joe Bob", "Fort Kaceyfurt", "Harvard University", "Dynamic Accounts Associate", "Hey what's up gang!"],

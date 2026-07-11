@@ -2,4 +2,12 @@ node_modules
 npm-debug.log*
 .env
 .git
-uploads
+# Keep the curated faux-user avatars in the production image while excluding
+# historical and runtime-generated uploads.
+uploads/*
+!uploads/anonymous.jpeg
+!uploads/1694639456049download (4).jpeg
+!uploads/1694639484961pexels-pixabay-220453.jpg
+!uploads/1694639507987charlesdeluvio-Mv9hjnEUHR4-unsplash.jpg
+!uploads/facebookanon.jpg
+!uploads/williamstown-1057646.jpg
