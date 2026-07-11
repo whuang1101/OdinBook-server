@@ -11,6 +11,8 @@ const commentSchema = new Schema({
     edited: {type:Boolean}
 })
 
+commentSchema.set("toJSON", { versionKey: false });
+
 commentSchema.index({ post: 1, date: 1 });
 commentSchema.index({ author: 1 });
 

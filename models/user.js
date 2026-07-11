@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 const {Schema} = mongoose
 
 const userSchema =  new Schema({
-    email: {type:String, required:true},
-    password: {type:String},
+    email: {type:String, required:true, trim:true, lowercase:true},
+    password: {type:String, select:false},
     name: {type:String,required: true},
     comments: [{type: mongoose.Schema.Types.ObjectId} ],
     friends_list: [{type: mongoose.Schema.Types.ObjectId, ref: "Users"}],
@@ -15,6 +15,15 @@ const userSchema =  new Schema({
     facebookId: {type:String},
     bio: {type:String},
 })
+
+userSchema.set("toJSON", {
+    versionKey: false,
+    transform(document, result) {
+        delete result.password;
+        delete result.facebookId;
+        return result;
+    },
+});
 
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ facebookId: 1 }, { sparse: true });

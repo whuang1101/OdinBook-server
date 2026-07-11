@@ -12,6 +12,8 @@ const postSchema = new Schema({
     edited: {type:Boolean},
 })
 
+postSchema.set("toJSON", { versionKey: false });
+
 postSchema.index({ author: 1, date: -1 });
 
 module.exports = mongoose.model("Posts", postSchema);

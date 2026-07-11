@@ -1,167 +1,160 @@
 const asyncHandler = require("express-async-handler");
-const User = require("../models/user")
-const Friend = require("../models/friendRequest");
-const Post = require("../models/post");
-const Comments = require("../models/comment");
-const bcrypt = require('bcryptjs');
+const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
+const User = require("../models/user");
+const FriendRequest = require("../models/friendRequest");
+const Post = require("../models/post");
+const Comment = require("../models/comment");
+const { getPublicApiUrl } = require("../config/env");
+const { assertSelf, optionalString, requiredString } = require("../lib/http");
 const { hasCloudinaryConfig, uploadBuffer } = require("../lib/cloudinary");
-require("dotenv").config();
-
-function publicApiUrl() {
-    return process.env.PUBLIC_API_URL || "http://localhost:3000";
-}
 
 async function profileImageUrl(file) {
-    if (file && hasCloudinaryConfig()) {
-        const upload = await uploadBuffer(file.buffer);
-        return upload.secure_url;
-    }
-
-    return `${publicApiUrl()}/uploads/anonymous.jpeg`;
+  if (file && hasCloudinaryConfig()) {
+    const upload = await uploadBuffer(file.buffer);
+    return upload.secure_url;
+  }
+  return `${getPublicApiUrl()}/uploads/anonymous.jpeg`;
 }
 
-module.exports.getUser = asyncHandler(async(req,res, next) => {
-    const findUser = await User.findById(req.params.id);
-    if(findUser){
-        res.status(200).json(findUser);
-    }
-    else{
-        res.status(404).json({message:"User not found"})
-    }
+module.exports.getUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  return res.status(200).json(user);
+});
 
-})
-module.exports.editBio = asyncHandler(async(req,res,next) => {
-    const findUser = await User.findByIdAndUpdate(req.body.id,
-        {bio:req.body.bio},
-        )
-    if(findUser){
-        res.status(200).json({message:"Bio updated"});
-    }else {
-        res.status(400).json({message: "User was not found"});
-    }
-})
-module.exports.editDetails = asyncHandler(async(req,res,next) => {
-    const findUser = await User.findByIdAndUpdate(req.body.id,
-        {lives:req.body.lives,
-        studies_at: req.body.studies_at,
-        job: req.body.job},
-        )
-    if(findUser){
-        res.status(200).json({message:"Bio updated"});
-    }else {
-        res.status(400).json({message: "User was not found"});
-    }
-})
-module.exports.removeFriend = asyncHandler(async(req,res,next) => {
-    const id = req.body.selfId;
-    const friendId = req.body.friendId;
-    if (String(req.user._id) !== String(id)) {
-        return res.status(403).json({ message: "You can only modify your own friends" });
-    }
-    //finds User and Friend to remove friends
-    const findUser = await User.findByIdAndUpdate(id, {$pull: {friends_list: friendId}});
-    const findFriend = await User.findByIdAndUpdate(friendId, {$pull: {friends_list: id}});
-    const findFriendRequest = await Friend.findOneAndDelete({$or: [{sender: id, recipient: friendId}, {sender: friendId, recipient:id}]});
-    if(findUser, findFriend, findFriend){
-        res.status(200).json({message: "friend removed"});
-    }
-    else{ 
-        res.status(404).json({message: "friend removed"});
-    }
-})
-module.exports.postNewUser = asyncHandler(async(req,res,next) => {
-    const body = req.body;
-    
-    const defaultFriendId = process.env.DEFAULT_FRIEND_ID;
-    const newUser = new User({
-        email:(body.email).toLowerCase(),
-        password: "",
-        name: body.first_name + " " + body.last_name,
-        comments: [],
-        friends_list: defaultFriendId ? [new mongoose.Types.ObjectId(defaultFriendId)] : [],
-        image_url: await profileImageUrl(req.file),
-        posts: [],
-        lives: body.live,
-        job: body.job,
-        studies_at: body.studies,
-        bio: ""
-    })
-    if (defaultFriendId) {
-        await User.findByIdAndUpdate(defaultFriendId, {$addToSet: {friends_list:newUser.id}},{new: true})
-    }
-    bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
-        if (err) {
-            return next(err);
-        }
-        newUser.password = hashedPassword;
-        const saveUser = await newUser.save();
-        if(saveUser){
-            res.status(200).json({message: "User Saved"});
-        }else{
-            res.status(404).json({message: "Not saved"});
-        }
-      });
-})
-module.exports.getEmail = asyncHandler(async(req,res) => {
-    const newEmail = req.params.email;
-    const findUser = await User.findOne({email: newEmail});
-    if(!findUser){
-        res.status(200).json(false)
-    }
-    else {
-        res.status(200).json(true);
-    }
-})
-module.exports.editName = asyncHandler(async(req,res) => {
-    if (String(req.user._id) !== String(req.body.id)) {
-        return res.status(403).json({ message: "You can only edit your own name" });
-    }
-    const findUser = await User.findByIdAndUpdate(req.body.id, {name: req.body.name});
-    if(findUser){
-        res.status(200).json({message: "Name updated successfully"});
-    }
-    else {
-        res.status(404).json({ message: "User not found" });
-    }
-})
-module.exports.editProfileImage = asyncHandler(async(req,res) => {
-    if (String(req.user._id) !== String(req.body.id)) {
-        return res.status(403).json({ message: "You can only edit your own image" });
-    }
+module.exports.editBio = asyncHandler(async (req, res) => {
+  assertSelf(req, req.body.id);
+  const user = await User.findByIdAndUpdate(req.body.id, {
+    bio: optionalString(req.body.bio, { max: 500 }),
+  });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  return res.status(200).json({ message: "Bio updated" });
+});
 
-    const newImage = await User.findByIdAndUpdate(req.body.id,{image_url: await profileImageUrl(req.file)})
-    if(newImage) {
-        res.status(200).json({message: "Image updated"});
-    }
-    else {
-        res.status(404).json({message: "User not found"});
-    }
-})
-module.exports.deleteUser = asyncHandler(async(req,res) => {
-    if (String(req.user._id) !== String(req.body.id)) {
-        return res.status(403).json({ message: "You can only delete your own account" });
-    }
+module.exports.editDetails = asyncHandler(async (req, res) => {
+  assertSelf(req, req.body.id);
+  const user = await User.findByIdAndUpdate(req.body.id, {
+    lives: optionalString(req.body.lives, { max: 120 }),
+    studies_at: optionalString(req.body.studies_at, { max: 160 }),
+    job: optionalString(req.body.job, { max: 160 }),
+  });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  return res.status(200).json({ message: "Details updated" });
+});
 
-    const commentId = await Comments.find({author: req.body.id}).select("_id");
-    const commentIdsToRemove = commentId.map(comment => comment._id);
-    const findUser = await User.findByIdAndDelete(req.body.id);
-    if (!findUser) {
-        return res.status(404).json({ message: "User not found" });
-    }
+module.exports.removeFriend = asyncHandler(async (req, res) => {
+  const { selfId, friendId } = req.body;
+  assertSelf(req, selfId, "You can only modify your own friends");
 
-    await Post.deleteMany({author: req.body.id});
-    await Comments.deleteMany({author: req.body.id});
-    await Post.updateMany({}, { $pull: { comments: { $in: commentIdsToRemove } } });
-    await Friend.deleteMany({
-        $or: [{ sender: req.body.id }, { recipient: req.body.id }],
-    });
-    await User.updateMany({}, { $pull: { friends_list: req.body.id } });
+  const [user, friend] = await Promise.all([
+    User.findByIdAndUpdate(selfId, { $pull: { friends_list: friendId } }),
+    User.findByIdAndUpdate(friendId, { $pull: { friends_list: selfId } }),
+    FriendRequest.findOneAndDelete({
+      $or: [
+        { sender: selfId, recipient: friendId },
+        { sender: friendId, recipient: selfId },
+      ],
+    }),
+  ]);
+  if (!user || !friend) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  return res.status(200).json({ message: "friend removed" });
+});
 
-    if (req.logout.length > 0) {
-        await new Promise((resolve, reject) => req.logout((err) => err ? reject(err) : resolve()));
-    } else {
-        req.logout();
-    }
-    res.status(200).json("Everything deleted");
-})
+module.exports.postNewUser = asyncHandler(async (req, res) => {
+  const firstName = requiredString(req.body.first_name, "First name", { max: 80 });
+  const lastName = requiredString(req.body.last_name, "Last name", { max: 80 });
+  const email = requiredString(req.body.email, "Email", { max: 254 }).toLowerCase();
+  const password = requiredString(req.body.password, "Password", { max: 128 });
+  const defaultFriendId = process.env.DEFAULT_FRIEND_ID;
+
+  const user = await User.create({
+    email,
+    password: await bcrypt.hash(password, 10),
+    name: `${firstName} ${lastName}`,
+    comments: [],
+    friends_list: defaultFriendId ? [new mongoose.Types.ObjectId(defaultFriendId)] : [],
+    image_url: await profileImageUrl(req.file),
+    posts: [],
+    lives: optionalString(req.body.live, { max: 120 }),
+    job: optionalString(req.body.job, { max: 160 }),
+    studies_at: optionalString(req.body.studies, { max: 160 }),
+    bio: "",
+  });
+
+  if (defaultFriendId) {
+    await User.findByIdAndUpdate(defaultFriendId, { $addToSet: { friends_list: user._id } });
+  }
+  return res.status(200).json({ message: "User Saved" });
+});
+
+module.exports.getEmail = asyncHandler(async (req, res) => {
+  const email = String(req.params.email || "").trim().toLowerCase();
+  return res.status(200).json(Boolean(await User.exists({ email })));
+});
+
+module.exports.editName = asyncHandler(async (req, res) => {
+  assertSelf(req, req.body.id, "You can only edit your own name");
+  const user = await User.findByIdAndUpdate(req.body.id, {
+    name: requiredString(req.body.name, "Name", { max: 160 }),
+  });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  return res.status(200).json({ message: "Name updated successfully" });
+});
+
+module.exports.editProfileImage = asyncHandler(async (req, res) => {
+  assertSelf(req, req.body.id, "You can only edit your own image");
+  const user = await User.findByIdAndUpdate(req.body.id, {
+    image_url: await profileImageUrl(req.file),
+  });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  return res.status(200).json({ message: "Image updated" });
+});
+
+module.exports.deleteUser = asyncHandler(async (req, res) => {
+  const userId = req.body.id;
+  assertSelf(req, userId, "You can only delete your own account");
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  const [comments, posts] = await Promise.all([
+    Comment.find({ author: userId }).select("_id"),
+    Post.find({ author: userId }).select("_id"),
+  ]);
+  const commentIds = comments.map(({ _id }) => _id);
+  const postIds = posts.map(({ _id }) => _id);
+
+  await Promise.all([
+    User.findByIdAndDelete(userId),
+    Post.deleteMany({ author: userId }),
+    Comment.deleteMany({ $or: [{ author: userId }, { post: { $in: postIds } }] }),
+    Post.updateMany({}, {
+      $pull: {
+        comments: { $in: commentIds },
+        likes: userId,
+      },
+    }),
+    FriendRequest.deleteMany({ $or: [{ sender: userId }, { recipient: userId }] }),
+    User.updateMany({}, { $pull: { friends_list: userId } }),
+  ]);
+
+  await new Promise((resolve, reject) => req.logout((error) => error ? reject(error) : resolve()));
+  return res.status(200).json("Everything deleted");
+});
+
+module.exports.profileImageUrl = profileImageUrl;

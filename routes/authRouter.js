@@ -1,69 +1,74 @@
 const express = require("express");
-const router = express.Router();
 const passport = require("passport");
-require("dotenv").config();
+const { getClientOrigins } = require("../config/env");
+const { userView } = require("../lib/userView");
 
-router.post("/local",passport.authenticate('local', { failureRedirect: '/login' }),
-function(req, res) {
-  res.status(200).json(req.user)
-})
-router.get("/me", (req,res)=>{
-  if(req.user){
-    res.status(200).json(req.user);
+const router = express.Router();
+
+function currentUser(req, res) {
+  if (!req.user) {
+    return res.status(401).json(false);
   }
-  else{
-    res.status(401).json(false);
-  }
+  return res.status(200).json(userView(req.user));
 }
-)
-router.get("/local/success", (req,res)=>{
-  if(req.user){
-    res.status(200).json(req.user);
-  }
-  else{
-    res.status(401).json(false);
-  }
-})
-router.get('/facebook',
-  passport.authenticate('facebook', { scope: 'email' }));
 
-router.get('/facebook/callback',
-  passport.authenticate('facebook', { failureRedirect: `${process.env.CLIENT_ORIGIN || process.env.ORIGIN}/login` }),
-  function(req, res) {
-    res.redirect(`${process.env.CLIENT_ORIGIN || process.env.ORIGIN}`);
-  });
-router.get("/login/success", (req,res)=> {
-  if(req.user){
-    res.status(200).json(req.user);
-  }
-  else{
-    res.status(401).json(false);
-  }
-})
-router.post("/logout", function(req, res, next) {
-  const finish = () => {
-    if (req.session) {
-      req.session.destroy(() => {
-        res.clearCookie("odinbook.sid");
-        res.status(200).json({ message: "Logged out" });
-      });
-      return;
+router.post("/local", (req, res, next) => {
+  passport.authenticate("local", (error, user) => {
+    if (error) {
+      return next(error);
+    }
+    if (!user) {
+      return res.status(401).json({ message: "Incorrect email or password" });
     }
 
-    res.status(200).json({ message: "Logged out" });
-  };
-
-  if (req.logout.length > 0) {
-    req.logout((err) => {
-      if (err) {
-        return next(err);
+    return req.logIn(user, (loginError) => {
+      if (loginError) {
+        return next(loginError);
       }
-      finish();
+      return res.status(200).json(userView(user));
     });
-    return;
-  }
+  })(req, res, next);
+});
 
-  req.logout();
-  finish();
-})
+router.get("/me", currentUser);
+router.get("/local/success", currentUser);
+router.get("/login/success", currentUser);
+
+router.get("/facebook", (req, res, next) => {
+  if (!req.app.locals.facebookEnabled) {
+    return res.status(503).json({ message: "Facebook login is not configured" });
+  }
+  return passport.authenticate("facebook", { scope: ["email"] })(req, res, next);
+});
+
+router.get("/facebook/callback", (req, res, next) => {
+  if (!req.app.locals.facebookEnabled) {
+    return res.status(503).json({ message: "Facebook login is not configured" });
+  }
+  const clientOrigin = getClientOrigins()[0];
+  return passport.authenticate("facebook", { failureRedirect: `${clientOrigin}/login` })(req, res, () => {
+    res.redirect(clientOrigin);
+  });
+});
+
+router.post("/logout", (req, res, next) => {
+  req.logout((error) => {
+    if (error) {
+      return next(error);
+    }
+
+    if (!req.session) {
+      return res.status(200).json({ message: "Logged out" });
+    }
+
+    return req.session.destroy((sessionError) => {
+      if (sessionError) {
+        return next(sessionError);
+      }
+      res.clearCookie("odinbook.sid");
+      return res.status(200).json({ message: "Logged out" });
+    });
+  });
+});
+
 module.exports = router;
