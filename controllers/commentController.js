@@ -10,12 +10,20 @@ module.exports.addPost = asyncHandler(async (req, res) => {
   if (!await postRepository.findRawById(postId)) {
     return res.status(404).json({ message: "Post not found" });
   }
-  await commentRepository.create({
+  const parentCommentId = req.body.parentCommentId || null;
+  if (parentCommentId) {
+    const parent = await commentRepository.findById(parentCommentId);
+    if (!parent || parent.post !== String(postId)) {
+      return res.status(400).json({ message: "Reply parent must belong to this post" });
+    }
+  }
+  const comment = await commentRepository.create({
     postId,
     authorId: userId,
     text: requiredString(req.body.text, "Comment", { max: 2000 }),
+    parentCommentId,
   });
-  return res.status(200).json({ message: "message saved and added to Post" });
+  return res.status(201).json({ message: "Comment created", comment });
 });
 
 module.exports.getComment = asyncHandler(async (req, res) => {

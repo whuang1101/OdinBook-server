@@ -85,13 +85,20 @@ async function seed() {
     }
 
     const comments = [
-      ["b1111111-1111-4111-8111-111111111111", postIds[0], ids.joe, "This looks great — excited to try it!"],
-      ["b2222222-2222-4222-8222-222222222222", postIds[0], ids.maya, "The new direction feels much calmer."],
-      ["b3333333-3333-4333-8333-333333333333", postIds[2], ids.theo, "Love this framing."],
-      ["b4444444-4444-4444-8444-444444444444", postIds[3], ids.joe, "Huge win. Accessibility work matters."],
+      ["b1111111-1111-4111-8111-111111111111", postIds[0], ids.joe, "This looks great — excited to try it!", null],
+      ["b2222222-2222-4222-8222-222222222222", postIds[0], ids.maya, "The new direction feels much calmer.", null],
+      ["b3333333-3333-4333-8333-333333333333", postIds[2], ids.theo, "Love this framing.", null],
+      ["b4444444-4444-4444-8444-444444444444", postIds[3], ids.joe, "Huge win. Accessibility work matters.", null],
+      ["b5555555-5555-4555-8555-555555555555", postIds[0], ids.wilson, "Glad you are here, Joe. The threads are my favorite part.", "b1111111-1111-4111-8111-111111111111"],
+      ["b6666666-6666-4666-8666-666666666666", postIds[0], ids.joe, "Same — conversations are much easier to follow now.", "b5555555-5555-4555-8555-555555555555"],
+      ["b7777777-7777-4777-8777-777777777777", postIds[2], ids.maya, "Thank you! I am turning it into a longer design note.", "b3333333-3333-4333-8333-333333333333"],
     ];
-    for (const [id, postId, authorId, text] of comments) {
-      await client.query(`INSERT INTO ${commentsTable} (id, post_id, author_id, text) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET text = EXCLUDED.text`, [id, postId, authorId, text]);
+    for (const [id, postId, authorId, text, parentCommentId] of comments) {
+      await client.query(`
+        INSERT INTO ${commentsTable} (id, post_id, author_id, text, parent_comment_id)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (id) DO UPDATE SET text = EXCLUDED.text, parent_comment_id = EXCLUDED.parent_comment_id
+      `, [id, postId, authorId, text, parentCommentId]);
     }
 
     for (const [postId, userId] of [[postIds[0], ids.joe], [postIds[0], ids.maya], [postIds[2], ids.joe], [postIds[3], ids.joe], [postIds[4], ids.wilson]]) {

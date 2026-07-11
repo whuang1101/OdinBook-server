@@ -11,12 +11,16 @@ function view(row) {
     comments: [],
     author: String(row.author_id),
     post: String(row.post_id),
+    parent_comment_id: row.parent_comment_id ? String(row.parent_comment_id) : null,
     edited: row.edited,
   } : null;
 }
 
-async function create({ postId, authorId, text }, client = pool) {
-  const { rows } = await client.query(`INSERT INTO ${comments} (post_id, author_id, text) VALUES ($1, $2, $3) RETURNING *`, [postId, authorId, text]);
+async function create({ postId, authorId, text, parentCommentId = null }, client = pool) {
+  const { rows } = await client.query(`
+    INSERT INTO ${comments} (post_id, author_id, text, parent_comment_id)
+    VALUES ($1, $2, $3, $4) RETURNING *
+  `, [postId, authorId, text, parentCommentId]);
   return view(rows[0]);
 }
 

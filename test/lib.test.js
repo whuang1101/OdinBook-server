@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const { HttpError, assertSelf, optionalString, requiredString } = require("../lib/http");
 const { userView } = require("../lib/userView");
 const { pagination } = require("../controllers/postController");
+const { buildCommentTree } = require("../repositories/postRepository");
 const { publicUser } = require("../repositories/userRepository");
 
 test("requiredString trims and validates input", () => {
@@ -59,4 +60,23 @@ test("feed pagination applies defaults and safe bounds", () => {
   assert.deepEqual(pagination({ query: {} }), { limit: 25, skip: 0 });
   assert.deepEqual(pagination({ query: { limit: "10", page: "3" } }), { limit: 10, skip: 20 });
   assert.deepEqual(pagination({ query: { limit: "500", page: "-1" } }), { limit: 100, skip: 0 });
+});
+
+test("comments serialize into stable nested threads", () => {
+  const users = new Map([
+    ["author-1", { _id: "author-1", name: "Maya" }],
+    ["author-2", { _id: "author-2", name: "Joe" }],
+  ]);
+  const rows = [
+    { id: "root", post_id: "post", author_id: "author-1", text: "Root", created_at: "2026-07-11", edited: false },
+    { id: "reply", post_id: "post", author_id: "author-2", parent_comment_id: "root", text: "Reply", created_at: "2026-07-12", edited: false },
+    { id: "nested", post_id: "post", author_id: "author-1", parent_comment_id: "reply", text: "Nested", created_at: "2026-07-13", edited: true },
+  ];
+
+  const tree = buildCommentTree(rows, users);
+  assert.equal(tree.length, 1);
+  assert.equal(tree[0].author.name, "Maya");
+  assert.equal(tree[0].comments[0]._id, "reply");
+  assert.equal(tree[0].comments[0].comments[0]._id, "nested");
+  assert.equal(tree[0].comments[0].comments[0].edited, true);
 });

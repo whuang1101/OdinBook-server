@@ -5,6 +5,27 @@ const posts = table("posts");
 const comments = table("comments");
 const likes = table("post_likes");
 
+function buildCommentTree(commentRows, usersById) {
+  const commentsById = new Map(commentRows.map((comment) => [String(comment.id), {
+    _id: String(comment.id),
+    date: comment.created_at,
+    text: comment.text,
+    image_url: comment.image_url,
+    comments: [],
+    author: usersById.get(String(comment.author_id)),
+    post: String(comment.post_id),
+    parent_comment_id: comment.parent_comment_id ? String(comment.parent_comment_id) : null,
+    edited: comment.edited,
+  }]));
+  const roots = [];
+  for (const comment of commentsById.values()) {
+    const parent = comment.parent_comment_id && commentsById.get(comment.parent_comment_id);
+    if (parent) parent.comments.push(comment);
+    else roots.push(comment);
+  }
+  return roots;
+}
+
 async function hydrate(postRows, client = pool) {
   if (!postRows.length) return [];
   const postIds = postRows.map(({ id }) => id);
@@ -24,16 +45,11 @@ async function hydrate(postRows, client = pool) {
     text: post.text,
     image_url: post.image_url,
     likes: likeRows.filter((like) => String(like.post_id) === String(post.id)).map((like) => String(like.user_id)),
-    comments: commentRows.filter((comment) => String(comment.post_id) === String(post.id)).map((comment) => ({
-      _id: String(comment.id),
-      date: comment.created_at,
-      text: comment.text,
-      image_url: comment.image_url,
-      comments: [],
-      author: usersById.get(String(comment.author_id)),
-      post: String(comment.post_id),
-      edited: comment.edited,
-    })),
+    comments: buildCommentTree(
+      commentRows.filter((comment) => String(comment.post_id) === String(post.id)),
+      usersById,
+    ),
+    comment_count: commentRows.filter((comment) => String(comment.post_id) === String(post.id)).length,
     public: post.is_public,
     author: usersById.get(String(post.author_id)),
     edited: post.edited,
@@ -89,4 +105,4 @@ async function remove(id, client = pool) {
   return result.rowCount > 0;
 }
 
-module.exports = { create, findById, findRawById, listByAuthor, listFeed, remove, setLike, update };
+module.exports = { buildCommentTree, create, findById, findRawById, listByAuthor, listFeed, remove, setLike, update };
