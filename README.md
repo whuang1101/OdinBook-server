@@ -71,6 +71,6 @@ The HTTP suite starts the Express app on an ephemeral port and verifies health, 
 
 ## Deployment
 
-The repository includes a multi-stage Docker image and a GitHub Actions workflow that publishes to GHCR and deploys to the shared VM when its SSH secrets are configured. See [`deploy/server.env.example`](deploy/server.env.example) for the production environment contract.
+The repository includes a multi-stage Docker image and a GitHub Actions workflow that publishes to GHCR and deploys to the shared VM when its SSH secrets are configured. See [`.env.example`](.env.example) for the environment contract.
 
 Built by [Wilson Huang](https://github.com/whuang1101).
