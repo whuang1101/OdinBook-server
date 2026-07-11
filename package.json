@@ -9,6 +9,7 @@
     "devstart": "npm run dev",
     "db:migrate": "node db/migrate.js",
     "db:seed": "node db/seed.js",
+    "db:seed:volume": "node db/seedVolume.js",
     "check": "find . -path ./node_modules -prune -o -name '*.js' -print0 | xargs -0 -n 1 node --check",
     "test": "npm run check && node --test --test-concurrency=1"
   },
