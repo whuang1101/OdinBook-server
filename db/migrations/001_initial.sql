@@ -1,5 +1,3 @@
-CREATE SCHEMA IF NOT EXISTS {{schema}};
-
 CREATE TABLE IF NOT EXISTS {{schema}}.schema_migrations (
   version text PRIMARY KEY,
   applied_at timestamptz NOT NULL DEFAULT now()

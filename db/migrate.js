@@ -14,7 +14,8 @@ async function migrate() {
   const files = (await fs.readdir(migrationsDirectory)).filter((file) => file.endsWith(".sql")).sort();
   await transaction(async (client) => {
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`${schema}:migrations`]);
-    await client.query(`CREATE SCHEMA IF NOT EXISTS "${schema}"`);
+    const schemaExists = await client.query("SELECT 1 FROM pg_namespace WHERE nspname = $1", [schema]);
+    if (!schemaExists.rowCount) await client.query(`CREATE SCHEMA "${schema}"`);
     await client.query(`CREATE TABLE IF NOT EXISTS "${schema}".schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())`);
     const applied = new Set((await client.query(`SELECT version FROM "${schema}".schema_migrations`)).rows.map(({ version }) => version));
 
