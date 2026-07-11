@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const { HttpError, assertSelf, optionalString, requiredString } = require("../lib/http");
 const { userView } = require("../lib/userView");
 const { pagination } = require("../controllers/postController");
-const User = require("../models/user");
+const { publicUser } = require("../repositories/userRepository");
 
 test("requiredString trims and validates input", () => {
   assert.equal(requiredString("  hello  ", "Text"), "hello");
@@ -39,14 +39,20 @@ test("userView removes private authentication fields", () => {
   });
 });
 
-test("the user schema excludes passwords from queries and JSON", () => {
-  assert.equal(User.schema.path("password").options.select, false);
-  const value = new User({
+test("database rows serialize to the existing public user contract", () => {
+  const value = publicUser({
+    id: "11111111-1111-4111-8111-111111111111",
     email: "person@example.com",
+    password_hash: "hash",
+    facebook_id: "provider-id",
     name: "Person Example",
-    password: "hash",
-  }).toJSON();
-  assert.equal(value.password, undefined);
+    comment_ids: [],
+    friend_ids: [],
+    post_ids: [],
+  });
+  assert.equal(value.password_hash, undefined);
+  assert.equal(value.facebook_id, undefined);
+  assert.equal(value._id, "11111111-1111-4111-8111-111111111111");
 });
 
 test("feed pagination applies defaults and safe bounds", () => {

@@ -5,7 +5,8 @@ const cors = require("cors");
 const session = require("express-session");
 
 const { configurePassport } = require("./auth/passport");
-const { getClientOrigins, getMongoUri, getSessionSecret } = require("./config/env");
+const { getClientOrigins, hasDatabaseConfig, getSessionSecret } = require("./config/env");
+const { pool, schema } = require("./db/pool");
 const { errorHandler, notFound } = require("./middleware/errors");
 const authRouter = require("./routes/authRouter");
 const postRouter = require("./routes/postRouter");
@@ -18,13 +19,12 @@ function createSessionStore() {
     return undefined;
   }
 
-  const mongoUri = getMongoUri();
-  if (!mongoUri) {
+  if (!hasDatabaseConfig()) {
     return undefined;
   }
 
-  const { MongoStore } = require("connect-mongo");
-  return MongoStore.create({ mongoUrl: mongoUri });
+  const PgStore = require("connect-pg-simple")(session);
+  return new PgStore({ pool, schemaName: schema, tableName: "user_sessions" });
 }
 
 function createCorsOptions() {

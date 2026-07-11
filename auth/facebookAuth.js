@@ -1,5 +1,5 @@
 const FacebookStrategy = require("passport-facebook").Strategy;
-const User = require("../models/user");
+const userRepository = require("../repositories/userRepository");
 const { getPublicApiUrl } = require("../config/env");
 
 function configureFacebookStrategy(passport) {
@@ -16,10 +16,10 @@ function configureFacebookStrategy(passport) {
     scope: ["email"],
   }, async (accessToken, refreshToken, profile, done) => {
     try {
-      let user = await User.findOne({ facebookId: profile.id });
+      let user = await userRepository.findByFacebookId(profile.id);
       if (!user) {
-        user = await User.create({
-          facebookId: profile.id,
+        user = await userRepository.create({
+          facebook_id: profile.id,
           name: profile.displayName,
           email: profile.emails?.[0]?.value || profile._json?.email,
           image_url: profile.photos?.[0]?.value || `${getPublicApiUrl()}/uploads/anonymous.jpeg`,

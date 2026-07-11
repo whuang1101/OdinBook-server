@@ -13,12 +13,15 @@ function errorHandler(err, req, res, next) {
   if (err.type === "entity.parse.failed") {
     status = 400;
     message = "Invalid JSON body";
-  } else if (err.name === "CastError") {
+  } else if (err.code === "22P02") {
     status = 400;
     message = "Invalid resource identifier";
-  } else if (err.code === 11000) {
+  } else if (err.code === "23505") {
     status = 409;
     message = "A user with that email already exists";
+  } else if (["23503", "23514"].includes(err.code)) {
+    status = 400;
+    message = "Request violates a data constraint";
   } else if (err.name === "MulterError") {
     status = 400;
   }

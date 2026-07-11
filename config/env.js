@@ -17,8 +17,8 @@ function getPublicApiUrl() {
   return (process.env.PUBLIC_API_URL || DEFAULT_API_URL).replace(/\/$/, "");
 }
 
-function getMongoUri() {
-  return process.env.MONGO_URI || process.env.SECRET_KEY;
+function hasDatabaseConfig() {
+  return Boolean(process.env.DATABASE_URL || process.env.PGHOST);
 }
 
 function getSessionSecret() {
@@ -36,7 +36,7 @@ function getSessionSecret() {
 
 module.exports = {
   getClientOrigins,
-  getMongoUri,
+  hasDatabaseConfig,
   getPublicApiUrl,
   getSessionSecret,
 };

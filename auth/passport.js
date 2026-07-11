@@ -1,4 +1,4 @@
-const User = require("../models/user");
+const userRepository = require("../repositories/userRepository");
 const { configureFacebookStrategy } = require("./facebookAuth");
 const { configureLocalStrategy } = require("./localAuth");
 
@@ -13,10 +13,10 @@ function configurePassport(passport) {
   configureLocalStrategy(passport);
   facebookEnabled = configureFacebookStrategy(passport);
 
-  passport.serializeUser((user, done) => done(null, user.id));
+  passport.serializeUser((user, done) => done(null, user._id));
   passport.deserializeUser(async (id, done) => {
     try {
-      done(null, await User.findById(id));
+      done(null, await userRepository.findById(id));
     } catch (error) {
       done(error);
     }

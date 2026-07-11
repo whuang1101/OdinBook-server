@@ -1,12 +1,12 @@
 # OdinBook API
 
-The Express and MongoDB service behind [OdinBook](https://github.com/whuang1101/OdinBook). It provides session authentication, profiles, posts, comments, likes, friend requests, image uploads, and the friends-only feed consumed by the React client.
+The Express and PostgreSQL service behind [OdinBook](https://github.com/whuang1101/OdinBook). It provides session authentication, profiles, posts, comments, likes, friend requests, image uploads, and the friends-only feed consumed by the React client.
 
 ## What the API provides
 
 - Local email/password authentication with Passport
 - Optional Facebook authentication
-- Mongo-backed, secure cross-site sessions
+- PostgreSQL-backed, secure cross-site sessions
 - Profile and account management
 - Friends, requests, and connection suggestions
 - Posts, likes, comments, and paginated feeds
@@ -24,13 +24,17 @@ npm install
 npm run dev
 ```
 
-The API starts on `http://localhost:3000` by default. A MongoDB instance and `MONGO_URI` are required to start the server.
+The API starts on `http://localhost:3000` by default. PostgreSQL connection variables are required to start the server. OdinBook uses an isolated `odinbook` schema and can safely share a database with another application.
 
 ## Configuration
 
 | Variable | Purpose |
 | --- | --- |
-| `MONGO_URI` | MongoDB connection string |
+| `DATABASE_URL` | Optional complete PostgreSQL connection string |
+| `PGHOST`, `PGPORT`, `PGDATABASE` | PostgreSQL server and existing database |
+| `PGUSER`, `PGPASSWORD`, `PGSSLMODE` | PostgreSQL authentication and TLS settings |
+| `DB_SCHEMA` | Isolated schema name, defaults to `odinbook` |
+| `AUTO_MIGRATE` | Apply pending migrations at startup unless set to `false` |
 | `SESSION_SECRET` | Secret used to sign session cookies; required in production |
 | `CLIENT_ORIGINS` | Comma-separated browser origins allowed by CORS |
 | `PUBLIC_API_URL` | Public API base URL used for callbacks and fallback images |
@@ -39,7 +43,7 @@ The API starts on `http://localhost:3000` by default. A MongoDB instance and `MO
 | `CLOUDINARY_*` | Enable Cloudinary-backed profile images |
 | `DEFAULT_FRIEND_ID` | Optional user automatically connected to new accounts |
 
-`CLIENT_ORIGIN` and `ORIGIN` remain supported as single-origin compatibility aliases. `SECRET_KEY` and `KEY` remain supported for older deployments, but `MONGO_URI` and `SESSION_SECRET` are preferred.
+`CLIENT_ORIGIN` and `ORIGIN` remain supported as single-origin compatibility aliases. `KEY` remains supported for older session-secret deployments, but `SESSION_SECRET` is preferred.
 
 ## API groups
 
@@ -59,6 +63,8 @@ The existing endpoint paths and response fields are retained for compatibility w
 ```bash
 npm test       # Syntax checks and HTTP/unit tests
 npm run check  # Syntax checks only
+npm run db:migrate # Create/update the isolated PostgreSQL schema
+npm run db:seed    # Idempotently load the demo account and faux social data
 ```
 
 The HTTP suite starts the Express app on an ephemeral port and verifies health, CORS, error responses, disabled providers, and authentication boundaries without requiring a test database.
