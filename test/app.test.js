@@ -4,6 +4,8 @@ const assert = require("node:assert/strict");
 process.env.NODE_ENV = "test";
 process.env.SESSION_SECRET = "test-session-secret";
 process.env.CLIENT_ORIGINS = "https://client.example.com,http://localhost:5173";
+process.env.BUILD_SHA = "97cd98eaac1958bea4208e2d814a90e0f04b25d5";
+process.env.BUILD_TIME = "2026-07-20T00:00:00Z";
 
 const { createApp } = require("../app");
 
@@ -26,6 +28,31 @@ test("health endpoint reports readiness", async () => {
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { ok: true });
   assert.equal(response.headers.get("x-powered-by"), null);
+});
+
+test("version endpoint exposes deterministic, non-secret build evidence", async () => {
+  const response = await fetch(`${baseUrl}/version`);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+
+  const version = await response.json();
+  assert.deepEqual(
+    {
+      service: version.service,
+      environment: version.environment,
+      commitSha: version.commitSha,
+      builtAt: version.builtAt,
+    },
+    {
+      service: "odinbook-api",
+      environment: "test",
+      commitSha: process.env.BUILD_SHA,
+      builtAt: process.env.BUILD_TIME,
+    },
+  );
+  assert.match(version.buildFingerprint, /^[a-f0-9]{64}$/);
+  assert.equal("databaseUrl" in version, false);
+  assert.equal("sessionSecret" in version, false);
 });
 
 test("allowed browser origins receive credentialed CORS headers", async () => {

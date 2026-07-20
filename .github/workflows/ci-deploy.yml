@@ -35,6 +35,9 @@ jobs:
         with:
           context: .
           push: true
+          build-args: |
+            BUILD_SHA=${{ github.sha }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
@@ -63,12 +66,19 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             cd /opt/odinbook
-            docker compose up -d --build server caddy
+            docker compose build \
+              --build-arg BUILD_SHA=${{ github.sha }} \
+              --build-arg BUILD_TIME="${{ github.event.head_commit.timestamp }}" \
+              server
+            docker compose up -d server caddy
             for attempt in $(seq 1 30); do
-              if docker compose exec -T server node -e "fetch('http://127.0.0.1:3000/health').then(r => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1))"; then
+              if docker compose exec -T server node -e "Promise.all([fetch('http://127.0.0.1:3000/health').then(r => { if (!r.ok) throw new Error('health failed'); }), fetch('http://127.0.0.1:3000/version').then(async r => { const v = await r.json(); if (!r.ok || v.commitSha !== '${{ github.sha }}' || !/^[a-f0-9]{64}$/.test(v.buildFingerprint)) throw new Error('version mismatch'); })]).then(() => process.exit(0)).catch(() => process.exit(1))"; then
                 exit 0
               fi
               sleep 2
             done
             docker compose logs --tail=100 server
             exit 1
+      - name: Verify public runtime fingerprint
+        run: |
+          node -e "fetch('https://odinbook-api.172.206.26.66.sslip.io/version').then(async r => { const v = await r.json(); if (!r.ok || v.commitSha !== '${{ github.sha }}' || !/^[a-f0-9]{64}$/.test(v.buildFingerprint)) process.exit(1); }).catch(() => process.exit(1))"

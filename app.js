@@ -1,4 +1,5 @@
 const path = require("path");
+const crypto = require("node:crypto");
 const express = require("express");
 const passport = require("passport");
 const cors = require("cors");
@@ -8,6 +9,7 @@ const { configurePassport } = require("./auth/passport");
 const { getClientOrigins, hasDatabaseConfig, getSessionSecret } = require("./config/env");
 const { pool, schema } = require("./db/pool");
 const { errorHandler, notFound } = require("./middleware/errors");
+const { getInfrastructureEvidence } = require("./lib/infrastructure");
 const authRouter = require("./routes/authRouter");
 const postRouter = require("./routes/postRouter");
 const friendRequestRouter = require("./routes/friendRequestRouter");
@@ -44,6 +46,23 @@ function createCorsOptions() {
   };
 }
 
+function getVersionEvidence() {
+  const commitSha = process.env.BUILD_SHA || "unknown";
+  const builtAt = process.env.BUILD_TIME || "unknown";
+  const buildFingerprint = crypto
+    .createHash("sha256")
+    .update(["odinbook-api", commitSha, builtAt].join(":"))
+    .digest("hex");
+
+  return {
+    service: "odinbook-api",
+    environment: process.env.NODE_ENV || "development",
+    commitSha,
+    builtAt,
+    buildFingerprint,
+  };
+}
+
 function createApp() {
   const app = express();
   const isProduction = process.env.NODE_ENV === "production";
@@ -71,6 +90,22 @@ function createApp() {
   app.use(passport.session());
 
   app.get("/health", (req, res) => res.status(200).json({ ok: true }));
+  app.get("/version", (req, res) => {
+    res.set("Cache-Control", "no-store");
+    res.status(200).json(getVersionEvidence());
+  });
+  app.get("/infrastructure", async (req, res, next) => {
+    try {
+      const evidence = await getInfrastructureEvidence();
+      res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=600");
+      res.status(200).json(evidence);
+    } catch (error) {
+      next(Object.assign(new Error("Infrastructure evidence is unavailable"), {
+        status: 503,
+        cause: error,
+      }));
+    }
+  });
   app.use("/uploads", express.static(path.join(__dirname, "uploads")));
   app.use("/auth", authRouter);
   app.use("/friends", friendRequestRouter);
@@ -83,4 +118,4 @@ function createApp() {
   return app;
 }
 
-module.exports = { createApp, createCorsOptions };
+module.exports = { createApp, createCorsOptions, getVersionEvidence };
